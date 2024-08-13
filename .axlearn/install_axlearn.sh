@@ -34,13 +34,18 @@ cp '/Users/remyw/Documents/Code Projects/axlearn/Dockerfile' .
 
 #test
 
+conda activate axlearn
+axlearn gcp config activate
+
 # Authenticate to GCP.
 #make sure to `gcloud config set project cool-machine-learning` first
 axlearn gcp auth
 
 # Run a dummy command on v4-8.
 # Note: the "'...'" quotes are important.
-axlearn gcp tpu start --name=maggiejz-001-0206 --tpu_type=v5p-64 -- python3 -c "'import jax; print(jax.devices())'"
+axlearn gcp tpu start --name=remyw-v5p --tpu_type=v5p-8 -- python3 -c "'import jax; print(jax.devices())'"
+axlearn gcp tpu start --name=maggiejz-tpu-regional --tpu_type=v4-8 -- python3 -c "'import jax; print(jax.devices())'"
+
 
 conda develop /Users/remyw/.docker/bin/
 
