@@ -1,4 +1,5 @@
 #to disconnect repo from VScode, delete .git
+<<<<<<< HEAD
 
 -renamed rwaxlearn repo to axlearn
 -cloned my fork 'axlearn'
@@ -9,3 +10,5 @@
 # pull commits made from remote (in browser) without overwriting commits made from local
 git pull --no-rebase
 # then git push from local
+=======
+>>>>>>> 0ea2b06 (Create rw_git_instruct)
