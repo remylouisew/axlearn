@@ -1,0 +1,7 @@
+[project]
+name = "rw-test"
+version = "0.0.1"
+dependencies = ["axlearn"]
+
+[project.optional-dependencies]
+tpu = ["axlearn[tpu]"]

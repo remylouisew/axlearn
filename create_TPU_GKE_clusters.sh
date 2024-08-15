@@ -110,5 +110,6 @@ axlearn gcp gke start --instance_type=tpu-v4-8 --num_replicas=1 \
         --cluster=maggiejz-tpu-regional \
         --bundler_type=artifactregistry --bundler_spec=image=tpu \
         --bundler_spec=dockerfile=Dockerfile --bundler_spec=target=tpu \
+        --bundler_spec=allow_dirty=True \
         -- python3 -c "'import jax; print(jax.devices())'"
 
