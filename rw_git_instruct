@@ -1,14 +1,20 @@
 #to disconnect repo from VScode, delete .git
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5387be7 (Update rw_git_instruct)
 
 -renamed rwaxlearn repo to axlearn
 -cloned my fork 'axlearn'
 -Created conda env rwaxlearn with python 3.9, installed 
 -installed pip install -e '.[core,dev]' and pip install -e '.[gcp]'
 -didnt do pre-commit checks stuff yet
+<<<<<<< HEAD
 
 # pull commits made from remote (in browser) without overwriting commits made from local
 git pull --no-rebase
 # then git push from local
 =======
 >>>>>>> 0ea2b06 (Create rw_git_instruct)
+=======
+>>>>>>> 5387be7 (Update rw_git_instruct)
