@@ -1,1 +1,7 @@
 #to disconnect repo from VScode, delete .git
+
+-renamed rwaxlearn repo to axlearn
+-cloned my fork 'axlearn'
+-Created conda env rwaxlearn with python 3.9, installed 
+-installed pip install -e '.[core,dev]' and pip install -e '.[gcp]'
+-didnt do pre-commit checks stuff yet
