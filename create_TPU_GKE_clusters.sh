@@ -111,8 +111,12 @@ axlearn gcp gke start --instance_type=tpu-v4-8 --num_replicas=1 \
         --bundler_type=artifactregistry --bundler_spec=image=tpu \
         --bundler_spec=dockerfile=Dockerfile --bundler_spec=target=tpu \
 <<<<<<< HEAD
+<<<<<<< HEAD
         --bundler_spec=allow_dirty=True \
 =======
 >>>>>>> e80131d (commit)
+=======
+        --bundler_spec=allow_dirty=True \
+>>>>>>> a0277c9 (works now)
         -- python3 -c "'import jax; print(jax.devices())'"
 
