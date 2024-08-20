@@ -10,11 +10,17 @@
 -installed pip install -e '.[core,dev]' and pip install -e '.[gcp]'
 -didnt do pre-commit checks stuff yet
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fd4b416 (update)
 
 # pull commits made from remote (in browser) without overwriting commits made from local
 git pull --no-rebase
 # then git push from local
+<<<<<<< HEAD
 =======
 >>>>>>> 0ea2b06 (Create rw_git_instruct)
 =======
 >>>>>>> 5387be7 (Update rw_git_instruct)
+=======
+>>>>>>> fd4b416 (update)
