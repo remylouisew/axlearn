@@ -5,3 +5,7 @@
 -Created conda env rwaxlearn with python 3.9, installed 
 -installed pip install -e '.[core,dev]' and pip install -e '.[gcp]'
 -didnt do pre-commit checks stuff yet
+
+# pull commits made from remote (in browser) without overwriting commits made from local
+git pull --no-rebase
+# then git push from local
