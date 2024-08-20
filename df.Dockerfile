@@ -1,5 +1,4 @@
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
-FROM $BASE
 
 #install python and pip
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -44,10 +43,6 @@ COPY . .
 # Copy the Apache Beam worker dependencies from the Beam Python 3.6 SDK image.
 COPY --from=apache/beam_python3.9_sdk:2.52.0 /opt/apache/beam /opt/apache/beam
 
-# Apache Beam worker expects pip at /usr/local/bin/pip by default.
-# Some images have pip in a different location. If necessary, make a symlink.
-# This line can be omitted in Beam 2.30.0 and later versions.
-RUN [[ `which pip` == "/usr/local/bin/pip" ]] || ln -s `which pip` /usr/local/bin/pip
 
 # Set the entrypoint to Apache Beam SDK worker launcher.
 ENTRYPOINT [ "/opt/apache/beam/boot" ]
