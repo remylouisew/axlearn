@@ -1,17 +1,20 @@
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
 FROM $BASE
 
-# Check that the chosen base image provides the expected version of Python interpreter.
-ARG PY_VERSION=3.9
-RUN [[ $PY_VERSION == `python -c 'import sys; print("%s.%s" % sys.version_info[0:2])'` ]] \
-   || { echo "Could not find Python interpreter or Python version is different from ${PY_VERSION}"; exit 1; }
+#install python and pip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install Google Cloud CLI
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
     apt-get update && apt-get install -y google-cloud-sdk && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
-    
+
    # Install git.
 RUN apt-get update && apt-get install -y git
 #setup
