@@ -1,5 +1,11 @@
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
 
+# Install python and pip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update
 RUN apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
@@ -21,31 +27,11 @@ WORKDIR /root
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
 RUN mkdir axlearn && touch axlearn/__init__.py
-# Setup venv to suppress pip warnings.
-ENV VIRTUAL_ENV=/opt/venv
-RUN python -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Install dependencies.
 RUN pip install flit
 RUN pip install --upgrade pip
 
-################################################################################
-# CI container spec.                                                           #
-################################################################################
-
-# Leverage multi-stage build for unit tests.
-FROM base as ci
-
-# TODO(markblee): Remove gcp,vertexai_tensorboard from CI.
-RUN pip install .[dev,gcp,vertexai_tensorboard]
-COPY . .
-
-# Defaults to an empty string, i.e. run pytest against all files.
-ARG PYTEST_FILES=''
-# Defaults to empty string, i.e. do NOT skip precommit
-ARG SKIP_PRECOMMIT=''
-# `exit 1` fails the build.
-RUN ./run_tests.sh $SKIP_PRECOMMIT "${PYTEST_FILES}"
 
 ###############
 #dataflow
