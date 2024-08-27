@@ -1,10 +1,7 @@
-FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04
 
-# Install python and pip
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip && \
-    rm -rf /var/lib/apt/lists/*
+ARG TARGET=base
+FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04 as base
+
 
 RUN apt-get update
 RUN apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
@@ -27,7 +24,10 @@ WORKDIR /root
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
 RUN mkdir axlearn && touch axlearn/__init__.py
-
+# Setup venv to suppress pip warnings.
+ENV VIRTUAL_ENV=/opt/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install dependencies.
 RUN pip install flit
 RUN pip install --upgrade pip
@@ -36,6 +36,7 @@ RUN pip install --upgrade pip
 ###############
 #dataflow
 ###############
+FROM base AS dataflow
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
 RUN pip install .[gcp,dataflow,dev]
@@ -43,7 +44,5 @@ COPY . .
 
 # Copy the Apache Beam worker dependencies from the Beam Python 3.6 SDK image.
 COPY --from=apache/beam_python3.9_sdk:2.52.0 /opt/apache/beam /opt/apache/beam
-
-
 # Set the entrypoint to Apache Beam SDK worker launcher.
 ENTRYPOINT [ "/opt/apache/beam/boot" ]
