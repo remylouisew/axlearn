@@ -1,13 +1,20 @@
 
-ARG TARGET=base
-FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04 as base
+#ARG TARGET=base
+FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04 
+# as base
 
-
-RUN apt-get update
-RUN apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
+# Install python and pip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3.10-venv && \
+    rm -rf /var/lib/apt/lists/* 
+ 
+RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install git.
 RUN apt-get install -y git
+
 
 # Install gcloud. https://cloud.google.com/sdk/docs/install
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
@@ -23,20 +30,23 @@ WORKDIR /root
 # Introduce the minimum set of files for install.
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
+#COPY axlearn/axlearn/cloud/gcp/examples/ .
+#RUN ls -la /axlearn/axlearn/cloud/gcp/examples/*
 RUN mkdir axlearn && touch axlearn/__init__.py
 # Setup venv to suppress pip warnings.
 ENV VIRTUAL_ENV=/opt/venv
-RUN python -m venv $VIRTUAL_ENV
+RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install dependencies.
 RUN pip install flit
+RUN pip install tensorflow==2.12
 RUN pip install --upgrade pip
 
 
 ###############
 #dataflow
 ###############
-FROM base AS dataflow
+#FROM base AS dataflow
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
 RUN pip install .[gcp,dataflow,dev]
