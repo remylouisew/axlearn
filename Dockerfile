@@ -39,7 +39,6 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install dependencies.
 RUN pip install flit
-RUN pip install tensorflow==2.12
 RUN pip install --upgrade pip
 
 
@@ -48,11 +47,18 @@ RUN pip install --upgrade pip
 ###############
 #FROM base AS dataflow
 
-ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
-RUN pip install .[gcp,dataflow,dev]
-COPY . .
 
-# Copy the Apache Beam worker dependencies from the Beam Python 3.6 SDK image.
-COPY --from=apache/beam_python3.9_sdk:2.52.0 /opt/apache/beam /opt/apache/beam
+ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
+#gpu packages are my own specified list (see pyproject.toml)
+RUN pip install .[gcp,dataflow,gpu,dev] 
+#RUN pip install tensorflow-gpu==2.12
+COPY . .
+COPY . /pipeline
+
+##COPY requirements.txt .
+#COPY *.py ./
+
+# Copy the Apache Beam worker dependencies from the Beam Python 3.10 SDK image.
+COPY --from=apache/beam_python3.10_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
 # Set the entrypoint to Apache Beam SDK worker launcher.
 ENTRYPOINT [ "/opt/apache/beam/boot" ]

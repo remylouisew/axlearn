@@ -14,9 +14,15 @@ git pull --no-rebase
 #Docker
 
 #stop all containers
-docker stop $(docker ps -a -q)
+docker stop "$(docker ps -a -q)"
+#or
+mapfile -t list < <(docker ps -q)
+[[ ${#list[@]} -gt 0 ]] && docker container stop "${list[@]}"
 #remove all containers
 docker rm $(docker ps -a -q)
+#or
+mapfile -t list < <(docker ps -aq)
+[[ ${#list[@]} -gt 0 ]] && docker container rm "${list[@]}"
 #see all images
 docker image ls
 #delete specific image - container must be deleted

@@ -19,10 +19,12 @@ import logging
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-import tensorflow as tf
+#import tensorflow as tf
+
 
 
 def check_gpus(_: None, gpus_optional: bool = False) -> None:
+    import tensorflow as tf
     """Validates that we are detecting GPUs, otherwise raise a RuntimeError."""
     gpu_devices = tf.config.list_physical_devices("GPU")
     if gpu_devices:
