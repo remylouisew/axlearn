@@ -1,0 +1,64 @@
+# set up workbench environment to be able to use numbs....requires cuda 11.3 so  Apache Beam notebooks will not work
+
+pip install --no-cache-dir apache-beam[gcp] tensorflow
+# Copy the Apache Beam worker dependencies from the Beam Python 3.6 SDK image.
+COPY --from=apache/beam_python3.9_sdk:2.52.0 /opt/apache/beam /opt/apache/beam
+# Set the entrypoint to Apache Beam SDK worker launcher.
+ENTRYPOINT [ "/opt/apache/beam/boot" ]
+
+
+docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
+
+
+
+#run job on dataflow
+
+​​docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:remyw-6a14d7 \
+-c "python3 -m apache_beam.examples.wordcount --input=gs://dataflow-samples/shakespeare/kinglear.txt --output=gs://dataflow-test-bucket0/rwtest/output/ --runner=DataflowRunner --project=cool-machine-learning --region=us-west1 --temp_location=gs://dataflow-test-bucket0/rwtest/temp/ --staging_location=gs://dataflow-test-bucket0/rwtest/staging --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+#with GPU (works but doesnt use GPU, prob because code doesn't)
+run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:remyw-6a14d7 \
+-c "python3 -m apache_beam.examples.wordcount \
+ --input=gs://dataflow-samples/shakespeare/kinglear.txt \
+  --output=gs://dataflow-test-bucket0/rwtest/output/ \
+   --runner=DataflowRunner --project=cool-machine-learning \
+   --worker_machine_type=n1-highmem-16 \
+   --disk_size_gb=50 \
+   --dataflow_service_options='worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver' \
+   --experiments=use_runner_v2 \
+    --region=us-west1 --temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+     --staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+#with GPU workload
+docker build -t us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf .
+docker push us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf
+
+docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:core \
+-c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:core \
+--sdk_location=container \
+--project=cool-machine-learning \
+--region=us-west1 \
+--temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+--staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+   --disk_size_gb=50 \
+   --runner=DataflowRunner \
+   --worker_machine_type=n1-standard-16 \
+   --dataflow_service_options=\"worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver\" \
+   --experiments=use_runner_v2 \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:core \
+--sdk_location=container
+sdk_container_image="us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:core", sdk_location=container
+
+
+
+#on axlearn...doesn't work
+axlearn gcp dataflow start --bundler_spec=dockerfile=Dockerfile --bundler_spec=repo=us-central1-docker.pkg.dev/cool-machine-learning/axlearn --bundler_spec=image=axlearn-dataflow --bundler_spec=target=dataflow --bundler_spec=allow_dirty=True --dataflow_spec=runner=DataflowRunner --dataflow_spec=dataflow_service_options='worker_accelerator=type:nvidia-l4;count:1;install-nvidia-driver' -- "python3 -m apache_beam.examples.wordcount --input=gs://dataflow-samples/shakespeare/kinglear.txt --output=gs://dataflow-test-bucket0/rwtest/output/ "
+
+
