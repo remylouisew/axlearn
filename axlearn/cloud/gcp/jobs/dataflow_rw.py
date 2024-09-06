@@ -77,8 +77,7 @@ import re
 import shlex
 import signal
 import subprocess
-from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any, Dict, List, Sequence, Tuple, cast
 
 from absl import app, flags, logging
 from google.auth.credentials import Credentials
@@ -183,7 +182,7 @@ class DataflowJob(GCPJob):
     @classmethod
     def _dataflow_spec_from_flags(
         cls, cfg: Config, fv: flags.FlagValues
-    ) -> tuple[dict[str, Any], list[str]]:
+    ) -> Tuple[Dict[str, Any], List[str]]:
         """Returns a flag dict and a list of flags considered as 'multi-flags'."""
         # Construct dataflow args, providing some defaults.
         service_account = cfg.service_account or gcp_settings("service_account_email", fv=fv)
@@ -195,7 +194,7 @@ class DataflowJob(GCPJob):
             "sdk_container_image": f"{cfg.bundler.repo}/{cfg.bundler.image}:{cfg.name}",
             "temp_location": f"gs://{gcp_settings('ttl_bucket', fv=fv)}/tmp/{cfg.name}/",
             "service_account_email": service_account,
-            "dataflow_service_options": ["enable_secure_boot", "enable_google_cloud_heap_sampling"],
+            "dataflow_service_options": ["enable_secure_boot", "enable_google_cloud_heap_sampling", "worker_accelerator=type:nvidia-l4;count:1;install-nvidia-driver"],
             "experiments": ["use_network_tags=allow-internet-egress", "use_runner_v2"],
             "no_use_public_ips": None,
             "runner": "DataflowRunner",
@@ -267,7 +266,7 @@ class DataflowJob(GCPJob):
             handle_popen(proc)
 
 
-def _docker_bundler_to_flags(cfg: BaseDockerBundler.Config, *, fv: flags.FlagValues) -> list[str]:
+def _docker_bundler_to_flags(cfg: BaseDockerBundler.Config, *, fv: flags.FlagValues) -> List[str]:
     """Converts docker bundler config to a string of flags."""
     # TODO(markblee): Add a config to_spec() method to mirror from_spec().
     specs = []
@@ -301,7 +300,7 @@ def _dataflow_resource(credentials: Credentials):
     return dataflow.projects().locations().jobs()
 
 
-def _get_dataflow_jobs(*, project: str, zone: str, job_name: str) -> list[dict[str, Any]]:
+def _get_dataflow_jobs(*, project: str, zone: str, job_name: str) -> List[Dict[str, Any]]:
     """Attempts to retrieve a dataflow job.
 
     If dataflow job is not found, returns None.
