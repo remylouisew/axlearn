@@ -195,7 +195,7 @@ class DataflowJob(GCPJob):
             "sdk_container_image": f"{cfg.bundler.repo}/{cfg.bundler.image}:{cfg.name}",
             "temp_location": f"gs://{gcp_settings('ttl_bucket', fv=fv)}/tmp/{cfg.name}/",
             "service_account_email": service_account,
-            "dataflow_service_options": ["enable_secure_boot", "enable_google_cloud_heap_sampling", "worker_accelerator=type:nvidia-l4;count:1;install-nvidia-driver"],
+            "dataflow_service_options": ["enable_secure_boot", "enable_google_cloud_heap_sampling"],
             "experiments": ["use_network_tags=allow-internet-egress", "use_runner_v2"],
             "no_use_public_ips": None,
             "runner": "DataflowRunner",
