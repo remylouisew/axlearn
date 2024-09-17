@@ -1,4 +1,6 @@
-ARG TARGET=base
+#dockerfile for DF with tf 2.16
+
+#ARG TARGET=base
 FROM nvidia/cuda:12.2.2-runtime-ubuntu22.04 as base
 
 # Install python and pip
@@ -43,16 +45,15 @@ RUN pip install --upgrade pip
 ###############
 #dataflow
 ###############
-FROM base AS dataflow
+#FROM base AS dataflow
 
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
 #gpu packages are my own specified list (see pyproject.toml)
-RUN pip install .[gcp,dataflow,gpu,dev] 
-#RUN pip install tensorflow-gpu==2.12
+RUN pip install .[gcp,dataflow,core] 
 COPY . .
-COPY . /pipeline
 
+#COPY . /pipeline
 ##COPY requirements.txt .
 #COPY *.py ./
 
