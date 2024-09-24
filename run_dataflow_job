@@ -2,9 +2,9 @@
 
 
 #fixed a lot of issues with dockerfile by building locally
-docker build . -t newtf1
-docker image tag newtf1 us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:newtf1
-docker image push  us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:newtf1
+docker build . -t cuda118
+docker image tag cuda118 us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118
+docker image push  us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118
 
 
 docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
@@ -63,6 +63,25 @@ docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gc
 -c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
 --name=remyw-newtf-gpuoptions \
 --sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:newtf1 \
+--sdk_location=container \
+--project=cool-machine-learning \
+--region=us-west1 \
+--temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+--staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+   --disk_size_gb=50 \
+   --runner=DataflowRunner \
+   --worker_machine_type=n1-standard-16 \
+   --dataflow_service_options='worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver' \
+   --experiments=use_runner_v2 \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+
+#9/20...trying with downgraded versions
+docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118 \
+-c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
+--name=remyw-newtf-gpuoptions \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118 \
 --sdk_location=container \
 --project=cool-machine-learning \
 --region=us-west1 \

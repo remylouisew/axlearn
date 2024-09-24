@@ -164,20 +164,28 @@ class DataflowJob(GCPJob):
         docker_auth_cmd = (
             f"gcloud auth configure-docker {registry_from_repo(cfg.bundler.repo)} --quiet"
         )
+
         bundle_cmd = " ".join(
             [
                 f"python3 -m {bundler.__name__} --name={cfg.name}",
                 *_docker_bundler_to_flags(cfg.bundler, fv=fv),
             ]
         )
-
         # Construct dataflow command.
         dataflow_spec, multi_flags = cls._dataflow_spec_from_flags(cfg, fv)
         dataflow_flags = " ".join(
             sorted(flags.flag_dict_to_args(dataflow_spec, multi_flags=multi_flags))
         )
+        logging.info(f"from_flags, cfg.command: {cfg.command}")
+        logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
+
+        #container_command = f"bash -c '{cfg.command} {dataflow_flags}'" 
+        
         cfg.setup_command = f"{docker_setup_cmd} && {docker_auth_cmd} && {bundle_cmd}"
+        #cfg.setup_command = shlex.quote(cfg.setup_command)
+        cfg.command = cfg.command.strip('\'\"')
         cfg.command = f"{cfg.command} {dataflow_flags}"
+        logging.info(f"from_flags, full df command: {cfg.command}")
         return cfg
 
     @classmethod
@@ -254,6 +262,7 @@ class DataflowJob(GCPJob):
             )
         cmd = f"{cfg.setup_command} && {cmd}"
         cmd = f"bash -c {shlex.quote(cmd)}"
+        #cmd = f"bash -c {cmd}"
         logging.info("Executing in subprocess: %s", cmd)
         with subprocess.Popen(cmd, shell=True, text=True) as proc:
             # Attempt to cleanup the process when exiting.
@@ -378,7 +387,7 @@ def main(argv: Sequence[str], *, flag_values: flags.FlagValues = FLAGS):
                 "Worker bundler repo and image are required. "
                 f"Instead, got repo={cfg.bundler.repo} image={cfg.bundler.image}."
             )
-
+        logging.info("Dataflow cfg: %s", cfg)
         job = cfg.instantiate()
         job.execute()
     elif action == "stop":

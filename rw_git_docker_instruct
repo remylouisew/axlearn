@@ -14,7 +14,6 @@ git pull --no-rebase
 #Docker
 
 #stop all containers
-<<<<<<< HEAD
 docker stop "$(docker ps -a -q)"
 #or
 mapfile -t list < <(docker ps -q)
@@ -24,11 +23,6 @@ docker rm $(docker ps -a -q)
 #or
 mapfile -t list < <(docker ps -aq)
 [[ ${#list[@]} -gt 0 ]] && docker container rm "${list[@]}"
-=======
-docker stop $(docker ps -a -q)
-#remove all containers
-docker rm $(docker ps -a -q)
->>>>>>> c840e3a (docker commands)
 #see all images
 docker image ls
 #delete specific image - container must be deleted
@@ -40,4 +34,16 @@ docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlea
 #build image
 docker build -t image_name(put the path to repository) .
 #push to repo
-docker push image_name(put the path to repository)
+docker push image_name(put the path to repository)\
+
+
+
+#general debugging
+
+#to log the output of parts and then ultimtely the fix, which was to strip the \n?
+    logging.info(f"from_flags, cfg.command: {cfg.command}") #prints "from flags, cf.command:" [cfg.command]
+    logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
+    cfg.setup_command = f"{docker_setup_cmd} && {docker_auth_cmd} && {bundle_cmd}"
+    cfg.command = f"{cfg.command} {dataflow_flags}"
+    cfg.command = f"{cfg.command.strip('\'\"')} {dataflow_flags}"
+    logging.info(f"from_flags, full command: {cfg.command}")
