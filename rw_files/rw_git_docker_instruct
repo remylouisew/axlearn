@@ -13,6 +13,8 @@ git pull --no-rebase
 
 #Docker
 
+docker system prune
+
 #stop all containers
 docker stop "$(docker ps -a -q)"
 #or
@@ -28,8 +30,9 @@ docker image ls
 #delete specific image - container must be deleted
 docker rmi <image_id>
 
+
 #see the dockerfile that created an image
-docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
+docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
 
 #build image
 docker build -t image_name(put the path to repository) .

@@ -2,9 +2,9 @@
 
 
 #fixed a lot of issues with dockerfile by building locally
-docker build . -t cuda118
-docker image tag cuda118 us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118
-docker image push  us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118
+docker build -t df-gemini -f /usr/local/google/home/remyw/Dockerfile.gemini .
+docker image tag df-gemini us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/df-gemini
+docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/df-gemini
 
 
 docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
@@ -76,7 +76,7 @@ docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gc
       --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
 
 
-#9/20...trying with downgraded versions
+#9/20...trying with downgraded versions---works!
 docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
 --entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118 \
 -c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
@@ -95,7 +95,45 @@ docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gc
       --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
 
 
-#on axlearn...doesn't work
-axlearn gcp dataflow start --bundler_spec=dockerfile=Dockerfile --bundler_spec=repo=us-central1-docker.pkg.dev/cool-machine-learning/axlearn --bundler_spec=image=axlearn-dataflow --bundler_spec=target=dataflow --bundler_spec=allow_dirty=True --dataflow_spec=runner=DataflowRunner --dataflow_spec=dataflow_service_options='worker_accelerator=type:nvidia-l4;count:1;install-nvidia-driver' -- "python3 -m apache_beam.examples.wordcount --input=gs://dataflow-samples/shakespeare/kinglear.txt --output=gs://dataflow-test-bucket0/rwtest/output/ "
+#9/30...trying again with python 3.8 image
+docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/rw_gpu:cuda118v2 \
+-c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
+--name=remyw-newtf-gpuoptions \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/rw_gpu:cuda118v2 \
+--sdk_location=container \
+--project=cool-machine-learning \
+--region=us-west1 \
+--temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+--staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+   --disk_size_gb=50 \
+   --runner=DataflowRunner \
+   --worker_machine_type=n1-standard-16 \
+   --dataflow_service_options='worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver' \
+   --experiments=use_runner_v2 \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
 
 
+   
+# axlearn dataflow on CPU - works completely now!
+# Dockerfile and pyproject.toml should be the same as the one in the main axlearn branch, 
+# but in case that gets updated and breaks something, use Dockerfile.axl in my dataflow branch:
+# https://github.com/remylouisew/axlearn/tree/dataflow
+DOCKER_REPO=us-central1-docker.pkg.dev/cool-machine-learning/axlearn
+DOCKER_IMAGE=remyw-4dbe38
+
+axlearn gcp dataflow start \
+    --name=$USER-dataflow \
+    --bundler_spec=extras=dataflow \
+    --bundler_spec=dockerfile=Dockerfile \
+    --bundler_spec=target=dataflow \
+    --bundler_spec=allow_dirty=True \
+    --bundler_spec=image=${DOCKER_IMAGE} \
+    --bundler_spec=repo=${DOCKER_REPO} \
+    --dataflow_spec=runner=DataflowRunner \
+    --dataflow_spec=region=us-central2 \
+    --dataflow_spec=machine_type=n2-standard-8 \
+    -- "'
+    python3 -m apache_beam.examples.wordcount \
+            --input=gs://dataflow-samples/shakespeare/kinglear.txt \
+        --output=gs://ttl-30d-us-central2/axlearn/users/remyw/dataflow/wordcount'"

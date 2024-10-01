@@ -1,20 +1,15 @@
-#dockerfile with downgraded versions
+# syntax=docker/dockerfile:1
 
-#ARG TARGET=base
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04 
+ARG TARGET=base
+ARG BASE_IMAGE=python:3.9-slim
 
-# Install python and pip
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3.8-venv && \
-    rm -rf /var/lib/apt/lists/* 
- 
-RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
+FROM ${BASE_IMAGE} AS base
+
+RUN apt-get update
+RUN apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install git.
 RUN apt-get install -y git
-
 
 # Install gcloud. https://cloud.google.com/sdk/docs/install
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
@@ -30,35 +25,91 @@ WORKDIR /root
 # Introduce the minimum set of files for install.
 COPY README.md README.md
 COPY pyproject.toml pyproject.toml
-#COPY axlearn/axlearn/cloud/gcp/examples/ .
-#RUN ls -la /axlearn/axlearn/cloud/gcp/examples/*
 RUN mkdir axlearn && touch axlearn/__init__.py
 # Setup venv to suppress pip warnings.
 ENV VIRTUAL_ENV=/opt/venv
-RUN python3 -m venv $VIRTUAL_ENV
+RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install dependencies.
 RUN pip install flit
 RUN pip install --upgrade pip
 
+################################################################################
+# CI container spec.                                                           #
+################################################################################
 
-###############
-#dataflow
-###############
-#FROM base AS dataflow
+# Leverage multi-stage build for unit tests.
+FROM base as ci
 
-
-ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
-#gpu packages are my own specified list (see pyproject.toml)
-RUN pip install .[gcp,dataflow,dev] 
-RUN pip install tensorflow==2.12
+# TODO(markblee): Remove gcp,vertexai_tensorboard from CI.
+RUN pip install .[core,dev,gcp,vertexai_tensorboard]
 COPY . .
 
-#COPY . /pipeline
-##COPY requirements.txt .
-#COPY *.py ./
+# Defaults to an empty string, i.e. run pytest against all files.
+ARG PYTEST_FILES=''
+# Defaults to empty string, i.e. do NOT skip precommit
+ARG SKIP_PRECOMMIT=''
+# `exit 1` fails the build.
+RUN ./run_tests.sh $SKIP_PRECOMMIT "${PYTEST_FILES}"
 
-# Copy the Apache Beam worker dependencies from the Beam Python 3.10 SDK image.
-COPY --from=apache/beam_python3.8_sdk:2.52.0 /opt/apache/beam /opt/apache/beam
-# Set the entrypoint to Apache Beam SDK worker launcher.
-ENTRYPOINT [ "/opt/apache/beam/boot" ]
+################################################################################
+# Bastion container spec.                                                      #
+################################################################################
+
+FROM base AS bastion
+
+# TODO(markblee): Consider copying large directories separately, to cache more aggressively.
+# TODO(markblee): Is there a way to skip the "production" deps?
+COPY . /root/
+RUN pip install .[core,gcp,vertexai_tensorboard]
+
+################################################################################
+# Dataflow container spec.                                                     #
+################################################################################
+
+FROM base AS dataflow
+
+# Beam workers default to creating a new virtual environment on startup. Instead, we want them to
+# pickup the venv setup above. An alternative is to install into the global environment.
+ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
+RUN pip install .[core,gcp,dataflow]
+COPY . .
+
+# Dataflow workers can't start properly if the entrypoint is not set
+# See: https://cloud.google.com/dataflow/docs/guides/build-container-image#use_a_custom_base_image
+COPY --from=apache/beam_python3.9_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
+ENTRYPOINT ["/opt/apache/beam/boot"]
+
+################################################################################
+# TPU container spec.                                                          #
+################################################################################
+
+FROM base AS tpu
+
+RUN apt-get install -y google-perftools
+
+# TODO(markblee): Support extras.
+ENV PIP_FIND_LINKS=https://storage.googleapis.com/jax-releases/libtpu_releases.html
+# Ensure we install the TPU version, even if building locally.
+# Jax will fallback to CPU when run on a machine without TPU.
+RUN pip install .[core,tpu]
+COPY . .
+
+################################################################################
+# GPU container spec.                                                          #
+################################################################################
+
+FROM base AS gpu
+
+RUN apt-get install -y google-perftools
+
+# TODO(markblee): Support extras.
+ENV PIP_FIND_LINKS=https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+RUN pip install .[core,gpu]
+COPY . .
+
+################################################################################
+# Final target spec.                                                           #
+################################################################################
+
+FROM ${TARGET} AS final
