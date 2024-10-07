@@ -1,0 +1,42 @@
+ARG DATAFLOW_PYTHON_VERSION=3.9
+
+FROM apache/beam_python${DATAFLOW_PYTHON_VERSION}_sdk:2.55.1
+
+# Setup.
+RUN mkdir -p /root
+WORKDIR /root
+
+ENV PYTHONPATH="/root:${PYTHONPATH}"
+
+# Introduce the minimum set of files for install.
+COPY README.md README.md
+# For Dataflow with GPU, Package versions are different than original axlearn (need to be compatible with python 3.8)
+COPY pyproject.dfgpu2.toml pyproject.toml
+#COPY axlearn/axlearn/cloud/gcp/examples/ .
+#RUN ls -la /axlearn/axlearn/cloud/gcp/examples/*
+RUN mkdir axlearn && touch axlearn/__init__.py
+
+# Beam workers default to creating a new virtual environment on startup, thus
+# we do installation into the global environment.
+# Install dependencies.
+RUN pip install flit
+RUN pip install nvidia-cudnn-cu11
+RUN pip install --upgrade pip
+
+# Update package lists and upgrade installed packages
+RUN apt-get update && \
+    apt-get dist-upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
+
+RUN wget -q -O cuda_11.8.0_520.61.05_linux.run https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_520.61.05_linux.run \
+&& sh cuda_11.8.0_520.61.05_linux.run --toolkit --silent || (egrep '^\[ERROR\]' /var/log/cuda-installer.log && exit 1)
+
+# Set environment variables for CUDA
+ENV PATH=/usr/local/cuda/bin${PATH:+:${PATH}} \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+
+#gpu packages are my own specified list (see pyproject.toml)
+RUN pip install .[gcp,core] 
+COPY . .
