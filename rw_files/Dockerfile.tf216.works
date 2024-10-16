@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3.10-venv && \
-    rm -rf /var/lib/apt/lists/* 
- 
+    rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install git.
@@ -50,7 +50,7 @@ RUN pip install --upgrade pip
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
 #gpu packages are my own specified list (see pyproject.toml)
-RUN pip install .[gcp,dataflow,core] 
+RUN pip install .[gcp,dataflow,core]
 COPY . .
 
 #COPY . /pipeline

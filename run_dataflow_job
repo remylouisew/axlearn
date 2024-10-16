@@ -2,9 +2,9 @@
 
 
 #fixed a lot of issues with dockerfile by building locally
-docker build -t df-gemini -f /usr/local/google/home/remyw/Dockerfile.gemini .
-docker image tag df-gemini us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/df-gemini
-docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/df-gemini
+docker build -t pytorchdf -f Dockerfile.pytorch .
+docker image tag pytorchdf us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchdf
+docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchdf
 
 
 docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
@@ -95,12 +95,69 @@ docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gc
       --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
 
 
-#9/30...trying again with python 3.8 image
+#10/8...trying again with python 3.8 image - works!
 docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
---entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/rw_gpu:cuda118v2 \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/cu118v3 \
 -c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
 --name=remyw-newtf-gpuoptions \
---sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/rw_gpu:cuda118v2 \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/cu118v3 \
+--sdk_location=container \
+--project=cool-machine-learning \
+--region=us-west1 \
+--temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+--staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+   --disk_size_gb=50 \
+   --runner=DataflowRunner \
+   --worker_machine_type=n1-standard-16 \
+   --dataflow_service_options='worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver' \
+   --experiments=use_runner_v2 \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+#trying python10
+docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/py10rapids \
+-c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/py10rapids \
+--sdk_location=container \
+--project=cool-machine-learning \
+--region=us-west1 \
+--temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+--staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+   --disk_size_gb=50 \
+   --runner=DataflowRunner \
+   --worker_machine_type=n1-standard-16 \
+   --dataflow_service_options='worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver:5xx' \
+   --experiments=use_runner_v2 \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+
+#new python-based image
+docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/df-gemini \
+-c "python3 -m axlearn.cloud.gcp.examples.mainGPU \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/df-gemini \
+--sdk_location=container \
+--project=cool-machine-learning \
+--region=us-west1 \
+--temp_location=gs://dataflow-test-bucket0/rwtest/temp/ \
+--staging_location=gs://dataflow-test-bucket0/rwtest/staging \
+   --disk_size_gb=50 \
+   --runner=DataflowRunner \
+   --worker_machine_type=n1-standard-16 \
+   --dataflow_service_options='worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver' \
+   --experiments=use_runner_v2 \
+      --service_account_email=ml-training@cool-machine-learning.iam.gserviceaccount.com"
+
+
+#pytorch
+docker run --rm  --mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud \
+--entrypoint /bin/bash us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchdf \
+-c "python3 -m axlearn.cloud.gcp.examples.pytorchpipeline \
+--input_data=gs://apache-beam-ml/testing/inputs/openimage_50k_benchmark.txt \
+--output_data=gs://temp-storage-for-end-to-end-tests/torch/result_gpu_xqhu.txt \
+--model_state_dict_path=gs://apache-beam-ml/models/torchvision.models.mobilenet_v2.pth \
+--model_name=mobilenet_v2 \
+--sdk_container_image=us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchdf \
 --sdk_location=container \
 --project=cool-machine-learning \
 --region=us-west1 \

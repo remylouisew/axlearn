@@ -1,7 +1,7 @@
 #dockerfile with downgraded versions - works
 
 #ARG TARGET=base
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04 
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -14,9 +14,9 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C
         python3.9 \
         python3-pip \
         python3.9-venv \
-   # && apt-get purge -y python3.8-dev \ 
-    && rm -rf /var/lib/apt/lists/* 
- 
+   # && apt-get purge -y python3.8-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install git.
@@ -55,8 +55,8 @@ RUN pip install --upgrade pip
 
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
-#note pyproject.dfgpu.toml is used, and dependencies/versions are different than usual pyproject.toml 
-RUN pip install .[gcp,dataflow,dev] 
+#note pyproject.dfgpu.toml is used, and dependencies/versions are different than usual pyproject.toml
+RUN pip install .[gcp,dataflow,dev]
 COPY . .
 
 #COPY . /pipeline

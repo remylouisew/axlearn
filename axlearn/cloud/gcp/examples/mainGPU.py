@@ -18,10 +18,11 @@ import argparse
 import logging
 
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions
 import tensorflow as tf
+from apache_beam.options.pipeline_options import PipelineOptions
 
 print(tf.__version__)
+
 
 def check_gpus(_: None, gpus_optional: bool = False) -> None:
     """Validates that we are detecting GPUs, otherwise raise a RuntimeError."""

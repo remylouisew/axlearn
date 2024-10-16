@@ -176,11 +176,11 @@ class DataflowJob(GCPJob):
         dataflow_flags = " ".join(
             sorted(flags.flag_dict_to_args(dataflow_spec, multi_flags=multi_flags))
         )
-        #logging.info(f"from_flags, cfg.command: {cfg.command}")
-        #logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
-        
+        # logging.info(f"from_flags, cfg.command: {cfg.command}")
+        # logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
+
         cfg.setup_command = f"{docker_setup_cmd} && {docker_auth_cmd} && {bundle_cmd}"
-        #cfg.command = cfg.command.replace('\'\"', "", 2)
+        # cfg.command = cfg.command.replace('\'\"', "", 2)
         cfg.command = f"{cfg.command} {dataflow_flags}"
         logging.info(f"from_flags, full df command: {cfg.command}")
         return cfg
@@ -255,11 +255,11 @@ class DataflowJob(GCPJob):
                 "docker run --rm "
                 "--mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud "
                 "--entrypoint /bin/bash "
-                f"{self._bundler.id(cfg.name)} -c '\"\'\"\'{cfg.command}\'\"\'\"'"
+                f"{self._bundler.id(cfg.name)} -c '\"'\"'{cfg.command}'\"'\"'"
             )
         logging.info(f"cmd before final: {cmd}")
         cmd = f"{cfg.setup_command} && {cmd}"
-        #cmd = f"bash -c {shlex.quote(cmd)}"
+        # cmd = f"bash -c {shlex.quote(cmd)}"
         cmd = f"bash -c '{cmd}'"
         logging.info("Executing in subprocess: %s", cmd)
         with subprocess.Popen(cmd, shell=True, text=True) as proc:

@@ -19,7 +19,6 @@ from axlearn.cloud.gcp.config import gcp_settings
 from axlearn.cloud.gcp.utils import infer_cli_name, validate_resource_name
 
 
-
 class VMCreationError(RuntimeError):
     """An error with VM creation."""
 
@@ -202,7 +201,7 @@ def list_vm_info(credentials: Credentials) -> list[VmInfo]:
         .execute()
     )
     results = []
-    print("results1",result)
+    print("results1", result)
     print("items1:", result.get("items", []))
     for vm in result.get("items", []):
         results.append(

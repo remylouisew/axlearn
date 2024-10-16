@@ -1,6 +1,6 @@
 
 # A list of commands to create single-host slice, multi-host slice, and muli sclies in GKE
-# Make sure to set the project using glcoud before you run the commands and change the 
+# Make sure to set the project using glcoud before you run the commands and change the
 # resource names such as cluster, node pool, and kms key.
 ### Single Slice ######
 # commands to create a gke cluster in central2-b
@@ -19,8 +19,8 @@ gcloud container node-pools create axlearn-pool \
     --spot \
     --num-nodes=1 \
     ## uncomment the following for CHD
-    ## --disk-type="hyperdisk-balanced" \  
-    ## --boot-disk-kms-key="projects/cool-machine-learning/locations/us-east5/keyRings/eshen-chd-3/cryptoKeys/eshen-chd-key-3" \   
+    ## --disk-type="hyperdisk-balanced" \
+    ## --boot-disk-kms-key="projects/cool-machine-learning/locations/us-east5/keyRings/eshen-chd-3/cryptoKeys/eshen-chd-key-3" \
     ## --enable-confidential-storage \
     --scopes=https://www.googleapis.com/auth/cloud-platform
 # multi-host slice v4-podslice 2X2X4
@@ -33,8 +33,8 @@ gcloud container node-pools create axlearn-pool-multihost \
     --spot \
     --num-nodes=4 \
     ## uncomment the following for CHD
-    ## --disk-type="hyperdisk-balanced" \  
-    ## --boot-disk-kms-key="projects/cool-machine-learning/locations/us-east5/keyRings/eshen-chd-3/cryptoKeys/eshen-chd-key-3" \   
+    ## --disk-type="hyperdisk-balanced" \
+    ## --boot-disk-kms-key="projects/cool-machine-learning/locations/us-east5/keyRings/eshen-chd-3/cryptoKeys/eshen-chd-key-3" \
     ## --enable-confidential-storage \
     --scopes=https://www.googleapis.com/auth/cloud-platform
 ### Multi Slice ######
@@ -50,8 +50,8 @@ gcloud container node-pools create axlearn-pool-multihost-1 \
     --enable-autoscaling \
     --max-nodes=4 \
     ## uncomment the following for CHD
-    ## --disk-type="hyperdisk-balanced" \  
-    ## --boot-disk-kms-key="projects/cool-machine-learning/locations/us-east5/keyRings/eshen-chd-3/cryptoKeys/eshen-chd-key-3" \   
+    ## --disk-type="hyperdisk-balanced" \
+    ## --boot-disk-kms-key="projects/cool-machine-learning/locations/us-east5/keyRings/eshen-chd-3/cryptoKeys/eshen-chd-key-3" \
     ## --enable-confidential-storage \
     --scopes=https://www.googleapis.com/auth/cloud-platform
 
@@ -119,4 +119,3 @@ axlearn gcp gke start --instance_type=tpu-v4-8 --num_replicas=1 \
         --bundler_spec=allow_dirty=True \
 >>>>>>> a0277c9 (works now)
         -- python3 -c "'import jax; print(jax.devices())'"
-

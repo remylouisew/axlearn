@@ -1,15 +1,7 @@
-#dockerfile with downgraded versions...toml file must use tensorflow <=2.13, numpy <= 1.24, in order to be compatible with python 3.8 (which Ubuntu insists on using)
-
 #ARG TARGET=base
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+FROM rapidsai/miniforge-cuda:cuda11.8.0-base-ubuntu20.04-py3.10-amd64
 
-# Install python and pip
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3.8-venv && \
-    rm -rf /var/lib/apt/lists/*
-
+ 
 RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install git.
@@ -30,15 +22,16 @@ WORKDIR /root
 # Introduce the minimum set of files for install.
 COPY README.md README.md
 # For Dataflow with GPU, Package versions are different than original axlearn (need to be compatible with python 3.8)
-COPY pyproject.dfgpu.toml pyproject.toml
+COPY pyproject.dfgpu2.toml pyproject.toml
 #COPY axlearn/axlearn/cloud/gcp/examples/ .
 #RUN ls -la /axlearn/axlearn/cloud/gcp/examples/*
 RUN mkdir axlearn && touch axlearn/__init__.py
+
 # Setup venv to suppress pip warnings.
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# Install dependencies.
+
 RUN pip install flit
 RUN pip install --upgrade pip
 
@@ -50,15 +43,15 @@ RUN pip install --upgrade pip
 
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
-#gpu packages are my own specified list (see pyproject.toml)
-RUN pip install .[gcp,dataflow,dev]
+#note pyproject.dfgpu.toml is used, and dependencies/versions are different than usual pyproject.toml 
+RUN pip install .[gcp,dataflow,dev] 
 COPY . .
 
 #COPY . /pipeline
 ##COPY requirements.txt .
 #COPY *.py ./
 
-# Copy the Apache Beam worker dependencies from the Beam Python 3.8 SDK image.
-COPY --from=apache/beam_python3.8_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
+# Copy the Apache Beam worker dependencies from the Beam Python 3.10 SDK image.
+COPY --from=apache/beam_python3.10_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
 # Set the entrypoint to Apache Beam SDK worker launcher.
 ENTRYPOINT [ "/opt/apache/beam/boot" ]

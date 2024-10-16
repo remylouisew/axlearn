@@ -2,7 +2,7 @@
 
 -renamed rwaxlearn repo to axlearn
 -cloned my fork 'axlearn'
--Created conda env rwaxlearn with python 3.9, installed 
+-Created conda env rwaxlearn with python 3.9, installed
 -installed pip install -e '.[core,dev]' and pip install -e '.[gcp]'
 -didnt do pre-commit checks stuff yet
 
@@ -29,6 +29,9 @@ mapfile -t list < <(docker ps -aq)
 docker image ls
 #delete specific image - container must be deleted
 docker rmi <image_id>
+#restart containers
+mapfile -t list < <(docker ps -aq)
+[[ ${#list[@]} -gt 0 ]] && docker restart container "${list[@]}"
 
 
 #see the dockerfile that created an image

@@ -182,4 +182,3 @@ junit_family="xunit2"
 [tool.isort]
 line_length = 100
 profile = "black"
-

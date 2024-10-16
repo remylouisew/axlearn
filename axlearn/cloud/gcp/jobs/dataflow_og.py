@@ -179,11 +179,11 @@ class DataflowJob(GCPJob):
         logging.info(f"from_flags, cfg.command: {cfg.command}")
         logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
 
-        #container_command = f"bash -c '{cfg.command} {dataflow_flags}'" 
-        
+        # container_command = f"bash -c '{cfg.command} {dataflow_flags}'"
+
         cfg.setup_command = f"{docker_setup_cmd} && {docker_auth_cmd} && {bundle_cmd}"
-        #cfg.setup_command = shlex.quote(cfg.setup_command)
-        cfg.command = cfg.command.strip('\'\"')
+        # cfg.setup_command = shlex.quote(cfg.setup_command)
+        cfg.command = cfg.command.strip("'\"")
         cfg.command = f"{cfg.command} {dataflow_flags}"
         logging.info(f"from_flags, full df command: {cfg.command}")
         return cfg
@@ -262,7 +262,7 @@ class DataflowJob(GCPJob):
             )
         cmd = f"{cfg.setup_command} && {cmd}"
         cmd = f"bash -c {shlex.quote(cmd)}"
-        #cmd = f"bash -c {cmd}"
+        # cmd = f"bash -c {cmd}"
         logging.info("Executing in subprocess: %s", cmd)
         with subprocess.Popen(cmd, shell=True, text=True) as proc:
             # Attempt to cleanup the process when exiting.

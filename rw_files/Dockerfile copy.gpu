@@ -1,15 +1,15 @@
 #dockerfile with downgraded versions...toml file must use tensorflow <=2.13, numpy <= 1.24, in order to be compatible with python 3.8 (which Ubuntu insists on using)
 
 #ARG TARGET=base
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 
 
 # Install python and pip
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
-    python3.8-venv && \
-    rm -rf /var/lib/apt/lists/*
-
+    python3-venv && \
+    rm -rf /var/lib/apt/lists/* 
+ 
 RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
 
 # Install git.
@@ -35,7 +35,7 @@ COPY pyproject.dfgpu.toml pyproject.toml
 #RUN ls -la /axlearn/axlearn/cloud/gcp/examples/*
 RUN mkdir axlearn && touch axlearn/__init__.py
 # Setup venv to suppress pip warnings.
-ENV VIRTUAL_ENV=/opt/venv
+ENV VIRTUAL_ENV=/opt/venv39
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Install dependencies.
@@ -51,7 +51,7 @@ RUN pip install --upgrade pip
 
 ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
 #gpu packages are my own specified list (see pyproject.toml)
-RUN pip install .[gcp,dataflow,dev]
+RUN pip install .[gcp,dataflow,dev] 
 COPY . .
 
 #COPY . /pipeline
@@ -59,6 +59,37 @@ COPY . .
 #COPY *.py ./
 
 # Copy the Apache Beam worker dependencies from the Beam Python 3.8 SDK image.
-COPY --from=apache/beam_python3.8_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
+COPY --from=apache/beam_python3.9_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
 # Set the entrypoint to Apache Beam SDK worker launcher.
 ENTRYPOINT [ "/opt/apache/beam/boot" ]
+
+
+
+---- from dockerfile.gemini
+# Set environment variables for CUDA
+ENV PATH /usr/local/cuda-11.8/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda-11.8/lib64:${LD_LIBRARY_PATH}
+
+
+# Install NVIDIA CUDA 11.8
+# Add NVIDIA package repositories
+ARG DEBIAN_FRONTEND=noninteractive
+RUN wget -q https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb
+COPY cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb /tmp/
+RUN dpkg -i /tmp/cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb
+
+# Set the default command
+CMD ["python3"]
+
+
+ENV INSTALLER_DIR="/tmp/installer_dir"
+COPY cuda_11.8.0_520.61.05_linux.run .
+
+# Add NVIDIA's package repository
+RUN wget -qO - https://developer.download.nvidia.com/compute/cuda/pgp_keys/NVIDIA-GPG-KEY.pub | apt-key add - && \
+    echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /" > /etc/apt/sources.list.d/cuda.list
+
+# Update package lists and install the CUDA toolkit
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cuda-toolkit-11-8 \
+    && rm -rf /var/lib/apt/lists/*
