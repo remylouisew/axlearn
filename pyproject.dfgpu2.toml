@@ -119,6 +119,15 @@ dataflow = [
     "google-apitools",  # for beam pipeline
     "orjson==3.9.10",
 ]
+
+#pytorch dependencies
+pytorch = [
+"pydantic<2.0.0",
+"torch>=1.7.1",
+"torchvision>=0.8.2",
+"pillow>=8.0.0",
+"tensorflow_hub" #tensorflow already installed in core
+]
 # GPU custom kernel dependency.
 gpu = [
     "triton==2.1.0",
