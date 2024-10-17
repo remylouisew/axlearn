@@ -2,9 +2,9 @@
 
 
 #fixed a lot of issues with dockerfile by building locally
-docker build -t pytorchdf -f Dockerfile.pytorch .
-docker image tag pytorchdf us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchdf
-docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchdf
+docker build -t pytorchbase -f Dockerfile.pytorch .
+docker image tag pytorchbase us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchbase
+docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/pytorchbase
 
 
 docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1

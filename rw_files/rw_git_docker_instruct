@@ -53,3 +53,27 @@ docker push image_name(put the path to repository)\
     cfg.command = f"{cfg.command} {dataflow_flags}"
     cfg.command = f"{cfg.command.strip('\'\"')} {dataflow_flags}"
     logging.info(f"from_flags, full command: {cfg.command}")
+
+#can't find a command
+echo $PATH
+#find where the comand is named
+find / -name nameofhtecommand
+#add that location to PATH
+
+
+#cos
+#to deploy container, you need to authenticate, and to authenticate, you need gcloud, which cos doesnt havetool
+#to install anything, you need to use toolbox
+toolbox apt install google-cloud-sdk
+#or to authenticate (this is what I did)
+toolbox gcloud auth configure-docker us-central1-docker.pkg.dev
+#have to move auth credentials into folder where docker can see them
+toolbox gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-central1-docker.pkg.dev
+
+
+sudo update-alternatives  --set python3 /usr/bin/python3.10
+
+gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-central1-docker.pkg.dev
+
+
+toolbox gcloud auth configure-docker us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow
