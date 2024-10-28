@@ -57,7 +57,7 @@ COPY . .
 ##COPY requirements.txt .
 #COPY *.py ./
 
-# Copy the Apache Beam worker dependencies from the Beam Python 3.10 SDK image.
+# Copy the Apache Beam worker dependencies from the Beam Python SDK image.
 COPY --from=apache/beam_python3.9_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
 # Set the entrypoint to Apache Beam SDK worker launcher.
 ENTRYPOINT [ "/opt/apache/beam/boot" ]

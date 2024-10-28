@@ -42,6 +42,9 @@ docker build -t image_name(put the path to repository) .
 #push to repo
 docker push image_name(put the path to repository)\
 
+#docker permission daemon socket error
+sudo chmod 666 /var/run/docker.sock
+
 
 
 #general debugging
@@ -77,3 +80,6 @@ gcloud auth print-access-token | docker login -u oauth2accesstoken --password-st
 
 
 toolbox gcloud auth configure-docker us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow
+
+update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+update-alternatives --install /usr/bin/python3 python /usr/bin/python3
