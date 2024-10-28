@@ -65,20 +65,20 @@ If you are getting error: RuntimeError: Popen command bash -c 'if [[ ! -x $(whic
 Make sure lines ~247-259 in your dataflow.py file look like this:
 
 
-'''
-   def _execute(self):
-...
-            cmd = cfg.command
-        else:
-            cmd = (
-                "docker run --rm "
-                "--mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud "
-                "--entrypoint /bin/bash "
-                f"{self._bundler.id(cfg.name)} -c '\"\'\"\'{cfg.command}\'\"\'\"'"
-            )
-        logging.info(f"cmd before final: {cmd}")
-        cmd = f"{cfg.setup_command} && {cmd}"
-        cmd = f"bash -c '{cmd}'"
-        logging.info("Executing in subprocess: %s", cmd)
+    '''
 
+    def _execute(self):
+    ...
+                cmd = cfg.command
+            else:
+                cmd = (
+                    "docker run --rm "
+                    "--mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud "
+                    "--entrypoint /bin/bash "
+                    f"{self._bundler.id(cfg.name)} -c '\"\'\"\'{cfg.command}\'\"\'\"'"
+                )
+            logging.info(f"cmd before final: {cmd}")
+            cmd = f"{cfg.setup_command} && {cmd}"
+            cmd = f"bash -c '{cmd}'"
+            logging.info("Executing in subprocess: %s", cmd)
     '''
