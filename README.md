@@ -61,7 +61,7 @@ axlearn gcp dataflow start \
 
 Troubleshooting:
 
-If you are getting error: RuntimeError: Popen command bash -c 'if [[ ! -x $(which docker) ]]; then sudo apt-get -o....
+If you are getting error: RuntimeError: Popen command bash -c 'if [[ ! -x $(which docker) ]]; then sudo apt-get -o.... \
 Make sure lines ~247-259 in your dataflow.py file look like this:
 
 
