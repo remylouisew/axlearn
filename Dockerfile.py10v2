@@ -1,5 +1,5 @@
 #ARG TARGET=base
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 
+FROM nvidia/cuda:12.3.1-devel-ubuntu22.04 
 
 RUN apt update
 RUN apt install software-properties-common -y
