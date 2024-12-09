@@ -1,4 +1,6 @@
-#ARG TARGET=base
+#Custom Container for running axlearn dataflow jobs with GPUs
+#author: remyw@google.com
+
 FROM nvidia/cuda:12.3.1-devel-ubuntu22.04 
 
 RUN apt update
@@ -28,20 +30,12 @@ RUN mkdir -p /root
 WORKDIR /root
 # Introduce the minimum set of files for install.
 COPY README.md README.md
-# 
+# Note the packages in this pyproject.toml file are different from original axlearn versions
 COPY pyproject.dfgpu2.toml pyproject.toml
-#COPY axlearn/axlearn/cloud/gcp/examples/ .
-#RUN ls -la /axlearn/axlearn/cloud/gcp/examples/*
 RUN mkdir axlearn && touch axlearn/__init__.py
 
 RUN pip install flit
 RUN pip install --upgrade pip
-
-
-###############
-#dataflow
-###############
-#FROM base AS dataflow
 
 
 #ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
