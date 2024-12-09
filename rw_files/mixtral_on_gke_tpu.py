@@ -6,6 +6,8 @@ https://cloud.google.com/kubernetes-engine/docs/tutorials/serve-llm-tpu-jetstrea
 
 '''
 
+git filter-repo --invert-paths --path mixtral_on_gke_tpu.py
+
 export HF_TOKEN=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
 
 

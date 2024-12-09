@@ -2,9 +2,9 @@
 
 
 #fixed a lot of issues with dockerfile by building locally
-docker build -t py10v2 -f Dockerfile.py10v2 .
-docker image tag py10v2 us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/py10v2
-docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/py10v2
+docker build -t inference -f Dockerfile.inference .
+docker image tag inference us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/inference
+docker image push  us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow/inference
 
 
 docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/maingpu:nondf  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1

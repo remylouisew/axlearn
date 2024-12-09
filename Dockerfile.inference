@@ -40,7 +40,7 @@ RUN pip install --upgrade pip
 
 #ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
 #note pyproject.dfgpu.toml is used, and dependencies/versions are different than usual pyproject.toml 
-RUN pip install .[gcp,dataflow,dev,core] 
+RUN pip install .[gcp,dataflow,core] 
 COPY . .
 
 # Copy the Apache Beam worker dependencies from the Beam Python 3.10 SDK image.
