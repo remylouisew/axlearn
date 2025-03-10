@@ -61,18 +61,6 @@ class ValidationError(ValueError):
     """Validation failure (e.g. input request format)."""
 
 
-class EvalGeneratorType(Enum):
-    """The type of generator in Evaluator.
-
-    Attributes:
-        RESPONSE: The original response generator.
-        GRADER: The LLM grader generator.
-    """
-
-    RESPONSE = "response"
-    GRADER = "grader"
-
-
 class BaseClient(Configurable):
     """Defines the client for Open API style model endpoint for decoding
     and response parsing."""
@@ -87,8 +75,6 @@ class BaseClient(Configurable):
         timeout: int = 120
         # A dict of extra body for requests.
         extra_body: Optional[dict[str, Any]] = None
-        # The type of generator client.
-        generator_type: EvalGeneratorType = EvalGeneratorType.RESPONSE
 
     def __init__(self, cfg: Config):
         super().__init__(cfg)
@@ -485,7 +471,7 @@ def load_requests(
         A list of dictionaries, where each dictionary represents a prompt object
             loaded from the file.
     """
-    gen_requests: list[dict[str, Any]] = load_jsonl_file(file_path=file_path)
+    gen_requests: list[dict[str, Any]] = _load_jsonl_file(file_path=file_path)
     if max_instances is not None:
         gen_requests = gen_requests[:max_instances]
     logging.info("Loaded %d prompts.", len(gen_requests))
@@ -538,6 +524,18 @@ def parse_responses(
     return parsed_responses
 
 
+class EvalGeneratorType(Enum):
+    """The type of generator in Evaluator.
+
+    Attributes:
+        RESPONSE: The original response generator.
+        GRADER: The LLM grader generator.
+    """
+
+    RESPONSE = "response"
+    GRADER = "grader"
+
+
 class MetricFn(Protocol):
     """Defines a protocol of metric calculation function."""
 
@@ -560,42 +558,6 @@ class MetricFn(Protocol):
         """
 
 
-class EvalSet:
-    """Defines the base eval set class."""
-
-    def load_requests(
-        self,
-        *,
-        metric_name: str,
-        local_dir: Optional[str] = None,
-    ) -> list[dict[str, Any]]:
-        """Implements a protocol to load eval data.
-
-        Args:
-            metric_name: The name of metric.
-            local_dir: If provided, download dataset to this directory.
-
-        Returns:
-            A list of Open API requests.
-        """
-        raise NotImplementedError(type(self))
-
-    def aggregate_metrics(self, *, metrics: list[dict]) -> dict:
-        """Aggregates a list of metrics to a final dictionary of metric.
-
-        Args:
-           metrics: A list of dictionary metrics.
-
-        Returns:
-            A dictionary of aggregated metric.
-        """
-        raise NotImplementedError(type(self))
-
-    def get_metrics(self) -> list[str]:
-        """Returns a list of metric names."""
-        raise NotImplementedError(type(self))
-
-
 class Evaluator(Configurable):
     """Defines an evaluator to load generated responses and compute metrics."""
 
@@ -612,10 +574,10 @@ class Evaluator(Configurable):
         super().__init__(cfg)
         cfg = self.config
         # Initializes generators.
-        generators: dict[EvalGeneratorType, Generator] = {}
+        generators = {}
         for generator_type, generator_cfg in cfg.generators.items():
             generators[generator_type] = generator_cfg.instantiate()
-        self.generators = generators
+        self._generators = generators
         self._metrics = {}
 
     def evaluate(
@@ -636,13 +598,13 @@ class Evaluator(Configurable):
         Returns:
             A dict of metrics.
         """
-        responses = load_jsonl_file(file_path=input_file)
+        responses = _load_jsonl_file(file_path=input_file)
         metrics = metric_fn(
             responses=responses,
-            generators=self.generators,
+            generators=self._generators,
             debug=self.config.debug,
         )
-        write_metrics(metrics=metrics, file_path=output_file)
+        _write_metrics(metrics=metrics, file_path=output_file)
         return metrics
 
     @classmethod
@@ -650,7 +612,7 @@ class Evaluator(Configurable):
         """Defines extra flags for evaluator.py."""
         common_kwargs = dict(flag_values=fv, allow_override=True)
         flags.DEFINE_string(
-            "grader_model", "gpt-4o-mini-2024-07-18", "The model name.", **common_kwargs
+            "grader_model", "gpt-3.5-turbo-0125", "The model name.", **common_kwargs
         )
         flags.DEFINE_string(
             "grader_client_name", "openai", "Open api client name.", **common_kwargs
@@ -663,18 +625,9 @@ class Evaluator(Configurable):
             **common_kwargs,
         )
         flags.DEFINE_string("metric_name", None, "The name of metric.", **common_kwargs)
-        flags.DEFINE_string(
-            "eval_set_name", None, "The name of pre-defined eval set.", **common_kwargs
-        )
-        flags.DEFINE_string(
-            "local_dir",
-            None,
-            "If provided, datasets would be downloaded to this directory.",
-            **common_kwargs,
-        )
 
 
-def write_metrics(metrics: dict[str, Any], *, file_path: str):
+def _write_metrics(metrics: dict[str, Any], *, file_path: str):
     """Writes to a json file with computed metrics.
 
     Args:
@@ -687,7 +640,7 @@ def write_metrics(metrics: dict[str, Any], *, file_path: str):
         json.dump(metrics, file, indent=2)
 
 
-def load_jsonl_file(file_path: str) -> list[dict[str, Any]]:
+def _load_jsonl_file(file_path: str) -> list[dict[str, Any]]:
     """Loads a file with each line in json line.
 
     Args:

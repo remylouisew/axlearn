@@ -170,7 +170,7 @@ def get_examples() -> Sequence[NestedTensor]:
     fake_input = input_fake.FakeLmInput(cfg)
     example_list = []
     for _ in range(cfg.total_num_batches):
-        example_list.append(fake_input.next())
+        example_list.append(fake_input.__next__())
 
     return example_list
 

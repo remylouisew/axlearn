@@ -8,7 +8,6 @@ https://docs.google.com/document/d/1Y5IdmvAZA7UtMHAWkRh8k2PscVoG5FvMH9-E6hygsyY/
 
 import os
 from dataclasses import dataclass
-from typing import Optional, Union
 
 import jax
 import jax.random
@@ -155,11 +154,7 @@ USER_FACING_NAME_TO_SYSTEM_CHARACTERISTICS = {
 
 
 def compile_trainer_programs(
-    trainer_config: SpmdTrainer.Config,
-    *,
-    topology: str,
-    topology_num_slices: int = 1,
-    compiler_options: Optional[dict[str, Union[str, bool]]] = None,
+    trainer_config: SpmdTrainer.Config, *, topology: str, topology_num_slices: int = 1
 ) -> dict[str, jax.stages.Compiled]:
     """Returns compiled XLA programs for the given trainer.
 
@@ -169,7 +164,6 @@ def compile_trainer_programs(
             USER_FACING_NAME_TO_SYSTEM_CHARACTERISTICS.
             If None, use CPU devices.
         topology_num_slices: The number of TPU slices.
-        compiler_options: Options to pass to XLA. See `compiler_options.py` for examples.
 
     Returns:
         A dict containing the following programs:
@@ -221,5 +215,5 @@ def compile_trainer_programs(
             ),
         )
     trainer: SpmdTrainer = cfg.instantiate(parent=None, devices=topology_devices)
-    compiled_train_step = trainer.compile_train_step(compiler_options=compiler_options)
+    compiled_train_step = trainer.compile_train_step()
     return {"train_step": compiled_train_step}

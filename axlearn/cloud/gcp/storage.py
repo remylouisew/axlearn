@@ -1,7 +1,6 @@
 # Copyright © 2023 Apple Inc.
 
 """Utilities to interact with Google Cloud Storage (GCS)."""
-# TODO(markblee): Deprecate and remove.
 
 import json
 import os

@@ -7,7 +7,6 @@
 
 # pylint: disable=too-many-lines
 """Input generator based on tf.data."""
-
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Callable, Optional, Union
 
@@ -29,7 +28,6 @@ from jax.experimental import multihost_utils
 from seqio import map_over_dataset
 from typing_extensions import Protocol
 
-from axlearn.common import file_system as fs
 from axlearn.common.config import (
     REQUIRED,
     ConfigBase,
@@ -360,7 +358,7 @@ def tfrecord_dataset(
 
     def fn() -> tf.data.Dataset:
         num_parallel_calls_for_read = read_parallelism if is_training else 1
-        glob_files = fs.glob(glob_path)
+        glob_files = tf.io.gfile.glob(glob_path)
         # Shuffle files to avoid deterministic loading.
         filenames = tf.data.Dataset.from_tensor_slices(glob_files)
         if is_training and shuffle_buffer_size > 0:
@@ -1213,7 +1211,7 @@ class Input(Module):
         batch_axis_names: Union[str, Sequence[str]] = "data",
     ) -> NestedTensor:
         if "input_dispatcher" in self.children:
-            global_physical_batch = jax.tree.map(
+            global_physical_batch = jax.tree_util.tree_map(
                 lambda x: with_sharding_constraint(x, PartitionSpec(batch_axis_names)),
                 global_physical_batch,
             )

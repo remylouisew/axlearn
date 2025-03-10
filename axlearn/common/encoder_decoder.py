@@ -2,7 +2,7 @@
 
 """Encoder-Decoder model."""
 
-from typing import Optional
+from typing import Callable, Optional
 
 from jax import numpy as jnp
 
@@ -42,26 +42,10 @@ class EncoderDecoderModel(BaseEncoderDecoderModel):
         cfg.decoder.transformer.layer.cross_attention.source_dim = cfg.encoder.dim
         self._add_child("decoder", cfg.decoder)
 
-    def forward(
+    def predict(
         self,
-        input_batch: Nested[Tensor],
-        return_aux: bool = False,
-    ) -> tuple[Tensor, Nested[Tensor]]:
-        """See `BaseEncoderDecoderModel` docstring for details."""
-        self._validate_input_batch(input_batch, paths=["source", "target", "target_labels"])
-        predict_outputs = self.predict(input_batch)
-        loss, aux_metrics = self._metrics(input_batch, predict_outputs=predict_outputs)
-        if not predict_outputs.keys().isdisjoint(aux_metrics.keys()):
-            raise KeyError(
-                "Key conflict between predict and _metrics:\n"
-                f"{predict_outputs.keys()=}\n{aux_metrics.keys()=}"
-            )
-        aux_output = dict(**predict_outputs, **aux_metrics)
-        # N.B. Do not enable for large-scale training since auxiliary outputs are not partitioned.
-        # TODO(rpang): support partitioning of auxiliary outputs.
-        return loss, aux_output if return_aux else {}
-
-    def predict(self, input_batch: dict[str, Tensor]) -> dict[str, Tensor]:
+        input_batch: dict[str, Tensor],
+    ) -> dict[str, Tensor]:
         """Produces encoder-decoder logits and hidden states.
 
         Args:
@@ -184,7 +168,11 @@ class EncoderDecoderModel(BaseEncoderDecoderModel):
         return loss, dict(per_token_loss=per_token_loss)
 
     def beam_search_decode(
-        self, input_batch: dict[str, Tensor], num_decodes: int, **kwargs
+        self,
+        input_batch: dict[str, Tensor],
+        max_sequence_length: int,
+        num_decodes: int,
+        brevity_penalty: Optional[Callable[[jnp.array, Tensor], jnp.array]] = None,
     ) -> BeamSearchOutputs:
         """Performs beam search decoding given prefix prompt.
 
@@ -196,8 +184,9 @@ class EncoderDecoderModel(BaseEncoderDecoderModel):
                     inputs_ids: An int Tensor of shape [batch_size, source_len].
                         Values should be in the range [0, vocab_size).
                         Paddings are inferred from input_ids == encoder.config.pad_token_id.
+            max_sequence_length: See parent docstring for details.
             num_decodes: See parent docstring for details.
-            kwargs: Additional kwargs for `decoder.beam_search_decode`.
+            brevity_penalty: See parent docstring for details.
 
         Returns:
             Beam search outputs. See parent docstring for details.
@@ -211,18 +200,19 @@ class EncoderDecoderModel(BaseEncoderDecoderModel):
         with child_context("beam_search_decode", module=self.decoder):
             return self.decoder.beam_search_decode(
                 prefix=prefix,
+                max_sequence_length=max_sequence_length,
                 num_decodes=num_decodes,
                 cross_attention_data=encoder_output,
                 cross_attention_logit_biases=cross_attention_logit_biases,
-                **kwargs,
+                brevity_penalty=brevity_penalty,
             )
 
     def sample_decode(
         self,
         input_batch: dict[str, Tensor],
+        max_sequence_length: int,
         num_decodes: int,
         logits_modifier: Optional[ConfigOr[LogitsToLogitsFn]] = None,
-        **kwargs,
     ) -> SampleOutputs:
         """Perform sample-based decoding.
 
@@ -234,9 +224,9 @@ class EncoderDecoderModel(BaseEncoderDecoderModel):
                     inputs_ids: An int Tensor of shape [batch_size, source_len].
                         Values should be in the range [0, vocab_size).
                         Paddings are inferred from input_ids == encoder.config.pad_token_id.
+            max_sequence_length: See parent docstring for details.
             num_decodes: See parent docstring for details.
             logits_modifier: See parent docstring for details.
-            kwargs: Additional kwargs for `decoder.sample_decode`.
 
         Returns:
             Sample decoding outputs. See parent docstring for details.
@@ -250,9 +240,9 @@ class EncoderDecoderModel(BaseEncoderDecoderModel):
         with child_context("sample_decode", module=self.decoder):
             return self.decoder.sample_decode(
                 prefix=prefix,
+                max_sequence_length=max_sequence_length,
                 num_decodes=num_decodes,
                 cross_attention_data=encoder_output,
                 cross_attention_logit_biases=cross_attention_logit_biases,
                 logits_modifier=logits_modifier,
-                **kwargs,
             )

@@ -2,8 +2,6 @@
 
 """Runs Dataflow jobs locally or in GCP.
 
-If you're having issues when submitting jobs to the DataflowRunner, use dataflow.alt.py instead
-
 The flow is:
 1. Builds the dataflow worker image.
 2. Runs the dataflow job either on dataflow (if runner is 'DataflowRunner', the default) or locally
@@ -166,20 +164,25 @@ class DataflowJob(GCPJob):
         docker_auth_cmd = (
             f"gcloud auth configure-docker {registry_from_repo(cfg.bundler.repo)} --quiet"
         )
+
         bundle_cmd = " ".join(
             [
                 f"python3 -m {bundler.__name__} --name={cfg.name}",
                 *_docker_bundler_to_flags(cfg.bundler, fv=fv),
             ]
         )
-
         # Construct dataflow command.
         dataflow_spec, multi_flags = cls._dataflow_spec_from_flags(cfg, fv)
         dataflow_flags = " ".join(
             sorted(flags.flag_dict_to_args(dataflow_spec, multi_flags=multi_flags))
         )
+        # logging.info(f"from_flags, cfg.command: {cfg.command}")
+        # logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
+
         cfg.setup_command = f"{docker_setup_cmd} && {docker_auth_cmd} && {bundle_cmd}"
+        # cfg.command = cfg.command.replace('\'\"', "", 2)
         cfg.command = f"{cfg.command} {dataflow_flags}"
+        logging.info(f"from_flags, full df command: {cfg.command}")
         return cfg
 
     @classmethod
@@ -246,16 +249,18 @@ class DataflowJob(GCPJob):
                 ),
                 processor,
             )
-            cmd = cfg.command
+            cmd = f"{cfg.command}"
         else:
             cmd = (
                 "docker run --rm "
                 "--mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud "
                 "--entrypoint /bin/bash "
-                f"{self._bundler.id(cfg.name)} -c '{cfg.command}'"
+                f"{self._bundler.id(cfg.name)} -c '\"'\"'{cfg.command}'\"'\"'"
             )
+        logging.info(f"cmd before final: {cmd}")
         cmd = f"{cfg.setup_command} && {cmd}"
-        cmd = f"bash -c {shlex.quote(cmd)}"
+        # cmd = f"bash -c {shlex.quote(cmd)}"
+        cmd = f"bash -c '{cmd}'"
         logging.info("Executing in subprocess: %s", cmd)
         with subprocess.Popen(cmd, shell=True, text=True) as proc:
             # Attempt to cleanup the process when exiting.
@@ -380,7 +385,7 @@ def main(argv: Sequence[str], *, flag_values: flags.FlagValues = FLAGS):
                 "Worker bundler repo and image are required. "
                 f"Instead, got repo={cfg.bundler.repo} image={cfg.bundler.image}."
             )
-
+        logging.info("Dataflow cfg: %s", cfg)
         job = cfg.instantiate()
         job.execute()
     elif action == "stop":

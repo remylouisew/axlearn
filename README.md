@@ -11,6 +11,8 @@
 | [Concepts](docs/02-concepts.md) | Core concepts and design principles. |
 | [CLI User Guide](docs/03-cli.md) | How to use the CLI. |
 | [Infrastructure](docs/04-infrastructure.md) | Core infrastructure components. |
+| Dataflow with GPU | See Below |
+
 
 ## Introduction
 
@@ -36,3 +38,47 @@ vision, and speech recognition and contains baseline configurations for training
 models.
 
 Please see [Concepts](docs/02-concepts.md) for more details on the core components and design of AXLearn, or [Getting Started](docs/01-start.md) if you want to get your hands dirty.
+
+
+## Dataflow Instructions
+
+To execute a Dataflow job with GPUs, use Dockerfile.cu118. Note that dataflow.py is different from the original axlearn repo, and pyproject.dfgpu.toml must be used.
+
+Example:
+
+axlearn gcp dataflow start \
+   --bundler_spec=dockerfile=Dockerfile.cu118 \
+   --bundler_spec=repo=${DOCKER_REPO} \
+   --bundler_spec=allow_dirty=True \
+   --dataflow_spec=runner=DataflowRunner \
+   --dataflow_spec=disk_size_gb=200 \
+   --dataflow_spec=region=us-west1 \
+   --dataflow_spec=worker_machine_type=n1-standard-16 \
+   --dataflow_spec=dataflow_service_options='"worker_accelerator=type:nvidia-tesla-t4;count:1;install-nvidia-driver"' \
+   -- python3 -m axlearn.cloud.gcp.examples.mainGPU
+
+
+
+Troubleshooting:
+
+If you are getting error: RuntimeError: Popen command bash -c 'if [[ ! -x $(which docker) ]]; then sudo apt-get -o.... \
+Make sure lines ~247-259 in your dataflow.py file look like this:
+
+
+    '''
+
+    def _execute(self):
+    ...
+                cmd = cfg.command
+            else:
+                cmd = (
+                    "docker run --rm "
+                    "--mount type=bind,src=$HOME/.config/gcloud,dst=/root/.config/gcloud "
+                    "--entrypoint /bin/bash "
+                    f"{self._bundler.id(cfg.name)} -c '\"\'\"\'{cfg.command}\'\"\'\"'"
+                )
+            logging.info(f"cmd before final: {cmd}")
+            cmd = f"{cfg.setup_command} && {cmd}"
+            cmd = f"bash -c '{cmd}'"
+            logging.info("Executing in subprocess: %s", cmd)
+    '''

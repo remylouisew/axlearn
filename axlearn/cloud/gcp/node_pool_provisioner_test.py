@@ -40,7 +40,6 @@ class TPUNodePoolProvisionerTest(parameterized.TestCase):
     def _mock_configs(
         self,
         num_replicas: int,
-        enable_tpu_smart_repair: bool = False,
     ):
         with mock_gcp_settings(
             [node_pool_provisioner.__name__, job.__name__, bundler.__name__], self._mock_settings
@@ -52,7 +51,6 @@ class TPUNodePoolProvisionerTest(parameterized.TestCase):
             job_cfg = TPUGKEJob.from_flags(fv)
             job_cfg.bundler = ArtifactRegistryBundler.from_spec([], fv=fv).set(image="test-image")
             job_cfg.accelerator.instance_type = "tpu-v4-8"
-            job_cfg.enable_tpu_smart_repair = enable_tpu_smart_repair
 
             provisioner_cfg = node_pool_provisioner.TPUNodePoolProvisioner.from_flags(fv)
 
@@ -76,10 +74,10 @@ class TPUNodePoolProvisionerTest(parameterized.TestCase):
         return serialized_jobspec.getvalue()
 
     @parameterized.parameters(
-        dict(num_replicas=1, job_priority=None, enable_tpu_smart_repair=False),
-        dict(num_replicas=2, job_priority=1, enable_tpu_smart_repair=True),
+        dict(num_replicas=1, job_priority=None),
+        dict(num_replicas=2, job_priority=1),
     )
-    def test_create_for(self, num_replicas: int, job_priority: int, enable_tpu_smart_repair: bool):
+    def test_create_for(self, num_replicas: int, job_priority: int):
         env = {}
         if job_priority is not None:
             env.update(
@@ -99,7 +97,7 @@ class TPUNodePoolProvisionerTest(parameterized.TestCase):
             construct_node_pool_name=mock_construct_node_pool_name,
         )
 
-        with self._mock_configs(num_replicas, enable_tpu_smart_repair) as [
+        with self._mock_configs(num_replicas) as [
             job_cfg,
             provisioner_cfg,
         ], mock_utils, mock.patch.dict("os.environ", env):
@@ -122,13 +120,6 @@ class TPUNodePoolProvisionerTest(parameterized.TestCase):
                 else:
                     self.assertIn("job-priority", additional_labels.keys())
                     self.assertEqual(str(job_priority), additional_labels.get("job-priority"))
-
-                if enable_tpu_smart_repair:
-                    self.assertEqual(
-                        "true", additional_labels.get("cloud.google.com/gke-tpu-auto-restart", None)
-                    )
-                else:
-                    self.assertNotIn("cloud.google.com/gke-tpu-auto-restart", additional_labels)
 
     @parameterized.parameters(
         dict(num_replicas=1),
