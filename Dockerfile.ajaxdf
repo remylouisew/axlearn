@@ -1,0 +1,132 @@
+# syntax=docker/dockerfile:1
+
+ARG DATAFLOW_PYTHON_VERSION=3.9
+
+FROM apache/beam_python${DATAFLOW_PYTHON_VERSION}_sdk:2.55.1
+
+ARG TASK=""
+
+RUN mkdir -p /root
+WORKDIR /root
+
+ENV PYTHONPATH="/root:${PYTHONPATH}"
+
+# Introduce the minimum set of files for install.
+COPY README.md README.md
+COPY pyproject.toml pyproject.toml
+RUN mkdir ajax && touch ajax/__init__.py
+
+# Beam workers default to creating a new virtual environment on startup, thus
+# we do installation into the global environment.
+# Install dependencies.
+RUN pip install flit
+RUN pip install --upgrade pip
+
+RUN pip install .[gcp,dataflow]
+
+ARG TURIBOLT_CONFIG=""
+# In order to enable access to Bolt pass the following arg to the bundler:
+#   --bundler_spec=TURIBOLT_CONFIG="$(cat ~/.turibolt/config)"
+# And make sure the job is running in us-central1 and using the following subnework:
+# https://www.googleapis.com/compute/v1/projects/gns-network-prod-0d38/regions/us-central1/subnetworks/cybertron-gcp-island-test-0rxn-usc1-denali-ent
+# Configure trust for Apple Corporate Root CAs if access to Bolt is requested.
+# See https://github.pie.apple.com/crypto-services/trust-apple-corp-root-cas#docker for
+# more details.
+COPY trust_apple_corp_root_cas.sh /usr/local/bin
+RUN if [ -n "$TURIBOLT_CONFIG" ] ; then \
+    echo "Enabling Bolt access" && \
+    mkdir .turibolt && \
+    echo "$TURIBOLT_CONFIG" > /root/.turibolt/config && \
+    pip install -i https://pypi.apple.com/simple .[just_bolt] && \
+    chmod 755 "/usr/local/bin/trust_apple_corp_root_cas.sh" && \
+    bash "/usr/local/bin/trust_apple_corp_root_cas.sh" ; fi
+
+RUN if [ "$TASK" = "speech_dataflow" ]; then \
+    echo "speech dataflow set up" && apt update && apt-get install -y ffmpeg && pip install .[speech_dataflow]; \
+    fi
+
+RUN if [ "$TASK" = "speech_dataflow_simple" ]; then \
+    echo "speech dataflow simple set up" && apt update && apt-get install -y ffmpeg && pip install .[speech_dataflow_simple] && pip install .[speech_yodas]; \
+fi
+
+RUN if [ "$TASK" = "speech_vad" ]; then \
+    echo "speech vad set up" && apt update && apt-get install -y ffmpeg && pip install .[speech_vad]; \
+fi
+
+RUN if [ "$TASK" = "safety" ]; then \
+    echo "safety dataflow set up" && pip install .[hf]; \
+    fi
+
+RUN if [ "$TASK" = "speech_hubert" ]; then \
+    echo "tokenize speech hubert set up" && apt update && apt-get install -y ffmpeg && pip install .[speech_hubert]; \
+    fi
+
+RUN if [ "$TASK" = "speech_encodec" ]; then \
+    echo "tokenize speech encodec set up" && pip install .[speech_encodec]; \
+    fi
+
+RUN if [ "$TASK" = "music_encodec" ]; then \
+    echo "tokenize music encodec set up" && pip install .[music_encodec]; \
+    fi
+
+RUN if [ "$TASK" = "stack_v2" ]; then \
+    echo "stack_v2 dataflow set up" && pip install .[codelm_dataflow]; \
+    fi
+
+RUN if [ "$TASK" = "video" ]; then \
+    echo "video dataflow set up" && pip install .[video]; \
+    fi
+
+RUN if [ "$TASK" = "cleantext_interleaved_filtering" ]; then \
+    echo "cleantext filtering" && pip install pillow; \
+    fi
+
+RUN if [ "$TASK" = "code_longcontext" ]; then \
+     echo "code longcontext set up" && pip install -i https://$ARTIFACTS@artifacts.apple.com/api/pypi/pypi-private/simple/ .[tree_sitter]; \
+fi
+
+RUN if [ "$TASK" = "diffusion_edit" ]; then \
+    echo "diffusion_edit dataflow set up" && pip install Pillow; \
+fi
+
+RUN if [ "$TASK" = "fasttext" ]; then \
+    echo "fasttext dataflow set up" && pip install fasttext; \
+fi
+
+RUN if [ "$TASK" = "video_dataset" ]; then \
+    echo "video dataset dataflow setup" && \
+    # install dev modules required for python-ldap
+    # https://www.python-ldap.org/en/python-ldap-3.4.3/installing.html#installing
+    apt-get update && \
+    apt-get install -y build-essential python3-dev \
+    libldap2-dev libsasl2-dev slapd ldap-utils tox \
+    lcov valgrind && \
+     pip install -i https://pypi.apple.com/simple \
+    .[video_dataset,video,sora_eval,data-centric]; \
+    fi
+
+RUN if [ "$TASK" = "coding_datagen" ]; then \
+  echo "coding data generation dataflow setup" && pip install \
+  -i https://pypi.apple.com/simple \
+  .[python_codeint,python_codeint_datagen,openai_api]; \
+fi
+
+RUN if [ "$TASK" = "coding_datagen_embedding" ]; then \
+  echo "code data generation and embedding dataflow setup" && pip install \
+  -i https://pypi.apple.com/simple \
+  .[python_codeint,python_codeint_datagen,openai_api,embedding_workflow]; \
+fi
+
+RUN if [ "$TASK" = "diffusion_data" ]; then \
+echo "diffusion dataset dataflow set up" && pip install -i https://pypi.apple.com/simple .[hf,pytorch_cpu]; \
+fi
+
+RUN if [ "$TASK" = "machine translation dataset" ]; then \
+    echo "machine translation dataflow setup" && pip install shapely; \
+fi
+
+RUN if [ "$TASK" = "boba"]; then \
+    echo "boba setup" && pip install .[ase_encryption,boba]; \
+fi
+
+COPY . .
