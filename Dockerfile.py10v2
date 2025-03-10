@@ -1,0 +1,49 @@
+#Custom Container for running axlearn dataflow jobs with GPUs
+#author: remyw@google.com
+
+FROM nvidia/cuda:12.3.1-devel-ubuntu22.04 
+
+RUN apt update
+RUN apt install software-properties-common -y
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt update
+RUN apt-get update
+
+ARG DEBIAN_FRONTEND=noninteractive
+ 
+RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl gcc g++
+
+# Install python and pip
+RUN apt install python3.10-full -y
+# RUN apt install python3.10-venv -y
+# RUN apt install python3.10-dev -y
+RUN rm /usr/bin/python3
+RUN ln -s python3.10 /usr/bin/python3
+RUN python3 --version
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 && pip install --upgrade pip
+
+# Install git.
+RUN apt-get install -y git
+
+# Setup.
+RUN mkdir -p /root
+WORKDIR /root
+# Introduce the minimum set of files for install.
+COPY README.md README.md
+# Note the packages in this pyproject.toml file are different from original axlearn versions
+COPY pyproject.dfgpu2.toml pyproject.toml
+RUN mkdir axlearn && touch axlearn/__init__.py
+
+RUN pip install flit
+RUN pip install --upgrade pip
+
+
+#ENV RUN_PYTHON_SDK_IN_DEFAULT_ENVIRONMENT=1
+#note pyproject.dfgpu.toml is used, and dependencies/versions are different than usual pyproject.toml 
+RUN pip install .[gcp,dataflow,dev,core] 
+COPY . .
+
+# Copy the Apache Beam worker dependencies from the Beam Python 3.10 SDK image.
+COPY --from=apache/beam_python3.10_sdk:2.55.1 /opt/apache/beam /opt/apache/beam
+# Set the entrypoint to Apache Beam SDK worker launcher.
+ENTRYPOINT [ "/opt/apache/beam/boot" ]

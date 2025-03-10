@@ -1,0 +1,85 @@
+#to disconnect repo from VScode, delete .git
+
+-renamed rwaxlearn repo to axlearn
+-cloned my fork 'axlearn'
+-Created conda env rwaxlearn with python 3.9, installed
+-installed pip install -e '.[core,dev]' and pip install -e '.[gcp]'
+-didnt do pre-commit checks stuff yet
+
+# pull commits made from remote (in browser) without overwriting commits made from local
+git pull --no-rebase
+# then git push from local
+
+
+#Docker
+
+docker system prune
+
+#stop all containers
+docker stop "$(docker ps -a -q)"
+#or
+mapfile -t list < <(docker ps -q)
+[[ ${#list[@]} -gt 0 ]] && docker container stop "${list[@]}"
+#remove all containers
+docker rm $(docker ps -a -q)
+#or
+mapfile -t list < <(docker ps -aq)
+[[ ${#list[@]} -gt 0 ]] && docker container rm "${list[@]}"
+#see all images
+docker image ls
+#delete specific image - container must be deleted
+docker rmi <image_id>
+#restart containers
+mapfile -t list < <(docker ps -aq)
+[[ ${#list[@]} -gt 0 ]] && docker restart container "${list[@]}"
+
+
+#see the dockerfile that created an image
+docker history --no-trunc us-central1-docker.pkg.dev/cool-machine-learning/axlearn/axlearn-dataflow:cuda118  | tac | tr -s ' ' | cut -d " " -f 5- | sed 's,^/bin/sh -c #(nop) ,,g' | sed 's,^/bin/sh -c,RUN,g' | sed 's, && , \\\n  & ,g' | sed 's,\s*[0-9]*[\.]*[0-9]*\s*[kMG]*B\s*$,,g' | head -n -1
+
+#build image
+docker build -t image_name(put the path to repository) .
+#push to repo
+docker push image_name(put the path to repository)\
+
+#docker permission daemon socket error
+sudo chmod 666 /var/run/docker.sock
+
+
+
+#general debugging
+
+#to log the output of parts and then ultimtely the fix, which was to strip the \n?
+    logging.info(f"from_flags, cfg.command: {cfg.command}") #prints "from flags, cf.command:" [cfg.command]
+    logging.info(f"from_flags, dataflow_flags: {dataflow_flags}")
+    cfg.setup_command = f"{docker_setup_cmd} && {docker_auth_cmd} && {bundle_cmd}"
+    cfg.command = f"{cfg.command} {dataflow_flags}"
+    cfg.command = f"{cfg.command.strip('\'\"')} {dataflow_flags}"
+    logging.info(f"from_flags, full command: {cfg.command}")
+
+#can't find a command
+echo $PATH
+#find where the comand is named
+find / -name nameofhtecommand
+#add that location to PATH
+
+
+#cos
+#to deploy container, you need to authenticate, and to authenticate, you need gcloud, which cos doesnt havetool
+#to install anything, you need to use toolbox
+toolbox apt install google-cloud-sdk
+#or to authenticate (this is what I did)
+toolbox gcloud auth configure-docker us-central1-docker.pkg.dev
+#have to move auth credentials into folder where docker can see them
+toolbox gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-central1-docker.pkg.dev
+
+
+sudo update-alternatives  --set python3 /usr/bin/python3.10
+
+gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-central1-docker.pkg.dev
+
+
+toolbox gcloud auth configure-docker us-central1-docker.pkg.dev/cool-machine-learning/rw-dataflow
+
+update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+update-alternatives --install /usr/bin/python3 python /usr/bin/python3
